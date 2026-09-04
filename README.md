@@ -1,67 +1,42 @@
 # Linux Troubleshooting Labs
 
-Practical Linux troubleshooting labs focused on entry-level IT Support, Linux administration, networking basics, logs, and service recovery.
+This repository contains Linux troubleshooting exercises I use while building practical system administration and IT support skills.
 
-These labs are part of my hands-on preparation for LPIC-102 and Junior IT Support roles.
+The notes are intentionally junior-level. A page marked **simulated troubleshooting lab** is a practice scenario. A page marked **troubleshooting note from my lab environment** documents a problem that happened in one of my own virtual machines.
 
-## Focus Areas
+## Troubleshooting method
 
-- Linux service troubleshooting
-- systemd service analysis
-- Log investigation with journalctl
-- Network diagnostics
-- DNS and connectivity issues
-- SSH access troubleshooting
-- Basic firewall troubleshooting
-- Incident documentation and recovery steps
+I use the same basic sequence in each lab:
 
-## Lab Structure
-
-Each lab follows a simple troubleshooting format:
-
-1. Objective
-2. Scenario
-3. Problem Symptoms
-4. Investigation Steps
-5. Root Cause
-6. Fix Applied
-7. Verification
-8. Lessons Learned
+1. Confirm the symptom.
+2. Check the current system state.
+3. Read the most relevant logs or command output.
+4. Change one thing that matches the evidence.
+5. Verify the service or system again.
 
 ## Labs
 
-| Lab | Topic | Status |
+| Lab | Type | Main commands |
 |---|---|---|
-| Service Failure with systemd | Services, logs, recovery | Planned |
-| Port Conflict | Networking, service startup failure | Planned |
-| DNS Resolution Failure | DNS, connectivity | Planned |
-| SSH Access Troubleshooting | Remote access, network checks | Planned |
-| Firewall Blocked Service | Firewall, ports, service access | Planned |
-| Journald Log Analysis | Logs, incident investigation | Planned |
+| [Port conflict](labs/port-conflict/) | Simulated lab, completed with screenshots | `ss`, `fuser`, `ps`, `kill` |
+| [Service failure with systemd](labs/service-failure-systemd/) | Simulated lab, completed with screenshots | `systemctl`, `journalctl`, `ss`, `curl` |
+| [systemd service with a wrong path](labs/systemd-service-not-starting/) | Simulated troubleshooting lab | `systemctl`, `journalctl`, `systemctl cat` |
+| [DNS resolution failure](labs/dns-resolution-failure/) | Simulated troubleshooting lab | `ping`, `getent`, `dig`, `resolvectl` |
+| [File permission problem](labs/file-permission-problem/) | Simulated troubleshooting lab | `id`, `namei`, `ls`, `getfacl` |
+| [Network connectivity](labs/network-connectivity/) | Simulated troubleshooting lab | `ip`, `ping`, `ss`, `nc` |
+| [SSH key authentication](labs/ssh-key-authentication/) | Simulated troubleshooting lab | `ssh`, `systemctl`, `journalctl`, `ss` |
+| [Log investigation](labs/log-investigation/) | Simulated troubleshooting lab | `journalctl`, `grep`, `less`, `tail` |
+| [apt/dpkg recovery after `/boot` filled](labs/boot-space-package-repair/) | Note from my Kali VM | `df`, `du`, `dpkg`, `apt-get` |
 
-## Related Hands-on Project from my CV
+## Safety notes
 
-This repository supports the following hands-on project listed in my CV:
+- Commands that change services or system files should be tested in a disposable VM first.
+- A PID should be checked with `ps` before sending a signal.
+- A failed command is evidence. It should not be hidden with repeated restarts.
+- Example output will not match every distribution.
 
-**Linux Service Troubleshooting & Incident Recovery**
+## Related study
 
-- Investigated and resolved simulated Linux service failures using logs and CLI tools
-- Analyzed system behavior with `journalctl`, `systemctl`, and networking commands
-- Diagnosed connectivity and service startup issues
-- Documented troubleshooting steps and recovery procedures
-
-## Tools Used
-
-- `systemctl`
-- `journalctl`
-- `ss`
-- `ping`
-- `traceroute`
-- `dig`
-- `curl`
-- `ufw` / `firewalld`
-- Linux CLI
-
-## Goal
-
-The goal of this repository is to show practical troubleshooting skills at a junior / entry-level IT Support level, with clear documentation and realistic Linux problems.
+- [Linux Admin Notes](https://github.com/masporfirio/linux-admin-notes)
+- [Bash Support Scripts](https://github.com/masporfirio/bash-support-scripts)
+- [LPIC-101 Study](https://github.com/masporfirio/lpic-101-study)

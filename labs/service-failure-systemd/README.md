@@ -1,221 +1,101 @@
-# Service Failure with systemd
+# Lab: systemd Service Fails Because a Port Is Busy
 
-## Objective
+**Type:** Simulated troubleshooting lab, completed with screenshots.
 
-Investigate and recover a Linux service that fails to start using `systemctl`, `journalctl`, and related troubleshooting tools.
+This lab adds `systemd` and journal logs to the basic [port conflict lab](../port-conflict/).
 
 ## Scenario
 
-A custom web service called `myapp.service` should start automatically at boot, but the service fails to start.
+`myapp.service` starts a Python web server on TCP port `8080`. Another process is already using the port, so systemd reports a failed service.
 
-The goal is to identify the root cause, apply the fix, and verify that the service is running correctly.
+## Objective
 
-## Lab Setup
+Use service status, logs and socket information to connect the systemd failure to the port conflict.
 
-### Create the service script
+## Environment
 
-```bash
-sudo mkdir -p /opt/myapp
-```
+- Debian-based Linux virtual machine
+- `systemd`
+- Python 3 and `curl`
+- `sudo` access in the lab VM
 
-```bash
-cat << 'EOF' | sudo tee /opt/myapp/start.sh
-```
+## Investigation
 
-```bash
-#!/bin/bash
-echo "Starting MyApp..."
-python3 -m http.server 8080
-EOF
-```
+### 1. Check the service state
 
 ```bash
-sudo chmod +x /opt/myapp/start.sh
+sudo systemctl status myapp.service --no-pager
 ```
 
-### Create the systemd unit file
+This shows whether systemd started the unit, its exit status and recent messages. It is a quick first check, not the complete diagnosis.
 
-```bash
-cat << 'EOF' | sudo tee /etc/systemd/system/myapp.service
-```
-
-```bash
-[Unit]
-Description=Simple Python Web Service
-After=network.target
-
-[Service]
-ExecStart=/opt/myapp/start.sh
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-EOF
-```
-
-### Reload systemd and enable the service
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable myapp.service
-```
-
-## Simulated Problem
-
-A process is already using TCP port 8080, causing the service to fail.
-
-### Start a conflicting process
-
-```bash
-python3 -m http.server 8080
-```
-
-## Symptoms
-
-### Attempting to start the service results in failure:
-
-```bash
-sudo systemctl start myapp.service
-```
-
-Expected error:
-
-* Service enters failed state
-* Port 8080 already in use
-
-## Investigation Steps
-
-### Check service status
-
-```bash
-sudo systemctl status myapp.service
-```
-
-## Review logs
+### 2. Read logs for this unit
 
 ```bash
 sudo journalctl -u myapp.service -n 30 --no-pager
 ```
 
-## Identify the process using port 8080
+Filtering by unit keeps the first review focused. The expected error is `Address already in use`.
+
+### 3. Check the port
 
 ```bash
-sudo ss -tulpn | grep :8080
+sudo ss -ltnp | grep ':8080'
 ```
 
-### Alternative:
+The listener information links the application error to a running process.
+
+### 4. Verify the process
 
 ```bash
-sudo fuser 8080/tcp
+ps -fp <PID>
 ```
 
-## Root Cause
+This check comes before stopping anything.
 
-Another process was already listening on TCP port 8080, preventing the service from binding to the port.
+## Fix
 
-## Fix Applied
-
-### Stop the conflicting process:
+Stop the confirmed test process, then start the systemd service again:
 
 ```bash
-sudo kill <PID>
-```
-
-### Start the service again:
-
-```bash
+kill <PID>
 sudo systemctl start myapp.service
 ```
 
 ## Verification
 
-### Check service status:
-
 ```bash
-sudo systemctl status myapp.service
+systemctl is-active myapp.service
+sudo ss -ltnp | grep ':8080'
+curl -I http://127.0.0.1:8080
 ```
 
-## Expected output:
+The checks answer three different questions: whether systemd considers the service active, whether it is listening, and whether it responds over HTTP.
 
-* Active: active (running)
-
-## Test locally:
+If the unit is meant to start at boot, check that separately:
 
 ```bash
-curl http://localhost:8080
+systemctl is-enabled myapp.service
 ```
 
-## Optional Checks
+`enabled` and `active` are not the same state.
 
-### Enable service at boot:
+## Helper script
+
+The included `service_status.sh` prints service status and the last 30 journal lines:
 
 ```bash
-sudo systemctl is-enabled myapp.service
+./service_status.sh myapp.service
 ```
 
-### View listening ports:#
+## What I learned
 
-```bash
-sudo ss -tulpn | grep :8080
-```
+Restarting a failed service does not remove the cause. The journal message led to the port check, and the HTTP request verified more than the service status alone.
 
-## Command Reference
+## Screenshots
 
-| Command | Purpose |
-|--------|---------|
-| `systemctl status myapp.service` | Display the current status of the service |
-| `systemctl start myapp.service` | Start the service |
-| `systemctl stop myapp.service` | Stop the service |
-| `systemctl restart myapp.service` | Restart the service |
-| `systemctl daemon-reload` | Reload systemd unit files after changes |
-| `systemctl enable myapp.service` | Enable the service to start automatically at boot |
-| `systemctl is-enabled myapp.service` | Verify whether the service is enabled |
-| `journalctl -u myapp.service -n 30 --no-pager` | Show the last 30 log entries for the service |
-| `ss -tulpn \| grep :8080` | Identify which process is listening on TCP port 8080 |
-| `fuser 8080/tcp` | Display the PID using port 8080 |
-| `kill <PID>` | Terminate the conflicting process |
-| `curl http://localhost:8080` | Verify that the web service is responding |
-
-## Files Involved
-
-| File | Description |
-|------|-------------|
-| `/etc/systemd/system/myapp.service` | systemd unit file that defines how the service is started and managed |
-| `/opt/myapp/start.sh` | Bash script executed by systemd to launch the Python web server |
-| `/var/log/journal/` | Location where systemd journal logs are stored (if persistent logging is enabled) |
-
-
-## Skills Demonstrated
-
-* Linux service troubleshooting
-* systemd administration
-* Log analysis with journalctl
-* Port conflict diagnosis
-* Basic network verification
-* Incident documentation
-
-## Lessons Learned
-
-A service may fail even when the unit file is correct. Checking logs and listening ports is essential to identify conflicts and restore service availability.
-
-## Related CV Project
-
-This lab supports the following project listed in my CV:
-
-## Linux Service Troubleshooting & Incident Recovery
-
-
-## Helper Script
-
-This lab includes a helper script named `service_status.sh` that displays:
-
-- Service status using `systemctl`
-- Recent logs using `journalctl`
-
-Example usage:
-
-```bash
-./service_status.sh
-./service_status.sh ssh
-```
-
+- [Failed service](screenshots/service_failed.png)
+- [Journal error](screenshots/journalctl_error.png)
+- [Port conflict](screenshots/port_conflict.png)
+- [Running service](screenshots/service_running.png)
+- [HTTP test](screenshots/curl_test.png)

@@ -1,167 +1,82 @@
-# 🧪 LAB: Port Conflict Troubleshooting
+# Lab: Port Conflict
 
-## Overview
-
-This lab simulates a common Linux administration issue: a service fails to start because the required port is already in use.
-
-The goal is to diagnose the issue, identify the conflicting process, terminate it safely, and validate that the service can start correctly.
-
----
+**Type:** Simulated troubleshooting lab, completed with screenshots.
 
 ## Scenario
 
-A web service is expected to run on port `8080`, but it fails to start with an error indicating that the address is already in use.
+A simple web server should listen on TCP port `8080`, but a second copy fails with `Address already in use`.
 
-This is a common troubleshooting case in Linux system administration, DevOps environments, and infrastructure support roles.
+## Objective
 
----
+Find which process owns the port, confirm what it is, stop the correct process and verify that the port can be used again.
 
-## Objectives
+## Environment
 
-- Identify why the service cannot start  
-- Check which process is listening on the target port  
-- Use Linux troubleshooting tools to resolve the conflict  
-- Validate the fix  
+- Linux virtual machine
+- Python 3 standard library web server
+- Two terminal sessions
 
----
+## Investigation
 
-## Tools Used
+### 1. Reproduce the conflict
 
-- `ss`  
-- `fuser`  
-- `kill`  
-- `ps`  
-- `python3`  
-
----
-
-## Step 1 — Simulate the problem
-
-Start a simple HTTP service on port 8080:
+Start a local test server:
 
 ```bash
 python3 -m http.server 8080
 ```
 
-Open a second terminal and try to start the same service again:
+In a second terminal, run the same command. The second process should fail because only one listener can bind to the same address and port.
+
+### 2. Check the listening socket
 
 ```bash
-python3 -m http.server 8080
+ss -ltnp | grep ':8080'
 ```
 
-Expected result:
+`ss` confirms that the port is listening and may show the process name and PID. Without sufficient permissions, the process details may be missing.
 
-```bash
-OSError: [Errno 98] Address already in use
-```
-
----
-
-## Step 2 — Diagnose the issue
-
-Check which process is using port 8080:
-
-```bash
-ss -tulnp | grep 8080
-```
-
-Example output:
-
-```bash
-LISTEN 0 5 0.0.0.0:8080 0.0.0.0:* users:(("python3",pid=1234,fd=3))
-```
-
-Identify the process with fuser:
+### 3. Confirm the PID
 
 ```bash
 fuser 8080/tcp
+ps -fp <PID>
 ```
 
-Example output:
+`fuser` gives another way to find the PID. `ps` is the important safety check: it confirms which process would receive the signal.
+
+## Fix
+
+After confirming that the PID belongs to the test server:
 
 ```bash
-8080/tcp: 1234
+kill <PID>
 ```
 
-Inspect the process in more detail:
+I use the normal `TERM` signal first. A forced `kill -9` is not the default response because it does not let the process clean up.
+
+## Verification
+
+Check that the old listener is gone:
 
 ```bash
-ps -fp 1234
+ss -ltnp | grep ':8080'
 ```
 
----
-
-## Step 3 — Resolve the conflict
-
-Terminate the process by PID:
-
-```bash
-kill 1234
-```
-
-Or kill it directly with fuser:
-
-```bash
-fuser -k 8080/tcp
-```
-
----
-
-## Step 4 — Validate the fix
-
-Verify that nothing is listening on port 8080:
-
-```bash
-ss -tulnp | grep 8080
-```
-
-If no output is returned, the port is now free.
-
-Start the service again:
+No matching line means the port is free. Start the server again and test it locally:
 
 ```bash
 python3 -m http.server 8080
+curl -I http://127.0.0.1:8080
 ```
 
-The service should now start successfully.
+## What I learned
 
-⸻
-
-Key Takeaways
-	•	Only one process can bind to the same IP:port combination at a time
-	•	ss is useful for inspecting listening sockets
-	•	fuser helps identify which process is using a port
-	•	kill can be used to terminate the blocking process
-	•	A structured troubleshooting approach improves efficiency
-
-⸻
-
-Troubleshooting Mindset
-
-A sysadmin approach usually follows this sequence:
-	1.	Reproduce the issue
-	2.	Inspect the system state
-	3.	Identify the root cause
-	4.	Apply the fix
-	5.	Validate the result
-
+The error message identifies a resource conflict, but it does not identify the safe process to stop. Checking the socket and then confirming the PID with `ps` avoids acting on the wrong process.
 
 ## Screenshots
 
-### Service start failure
-![Service start failure](screenshots/01-address-already-in-use.png)
-
----
-
-### Port inspection with ss
-![Port inspection with ss](screenshots/02-ss-port-check.png)
-
----
-
-### Process identification with fuser
-![Process identification with fuser](screenshots/03-fuser-process.png)
-
----
-
-### Resolving the issue and restarting the service
-![Resolved port conflict](screenshots/04-resolved-port-conflict.png)
+- [Address already in use](screenshots/01-address-already-in-use.png)
+- [Port check with ss](screenshots/02-ss-port-check.png)
+- [Process identification with fuser](screenshots/03-fuser-process.png)
+- [Port available after the fix](screenshots/04-resolved-port-conflict.png)

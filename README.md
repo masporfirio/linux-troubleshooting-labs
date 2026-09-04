@@ -25,6 +25,8 @@ I use the same basic sequence in each lab:
 | [File permission problem](labs/file-permission-problem/) | Simulated troubleshooting lab | `id`, `namei`, `ls`, `getfacl` |
 | [Network connectivity](labs/network-connectivity/) | Simulated troubleshooting lab | `ip`, `ping`, `ss`, `nc` |
 | [SSH key authentication](labs/ssh-key-authentication/) | Simulated troubleshooting lab | `ssh`, `systemctl`, `journalctl`, `ss` |
+| [Log investigation](labs/log-investigation/) | Simulated troubleshooting lab | `journalctl`, `grep`, `less`, `tail` |
+| [apt/dpkg recovery after `/boot` filled](labs/boot-space-package-repair/) | Note from my Kali VM | `df`, `du`, `dpkg`, `apt-get` |
 
 ## Safety notes
 

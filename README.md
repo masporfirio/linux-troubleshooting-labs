@@ -21,8 +21,10 @@ I use the same basic sequence in each lab:
 | [Port conflict](labs/port-conflict/) | Simulated lab, completed with screenshots | `ss`, `fuser`, `ps`, `kill` |
 | [Service failure with systemd](labs/service-failure-systemd/) | Simulated lab, completed with screenshots | `systemctl`, `journalctl`, `ss`, `curl` |
 | [systemd service with a wrong path](labs/systemd-service-not-starting/) | Simulated troubleshooting lab | `systemctl`, `journalctl`, `systemctl cat` |
-
-More short labs will be added as I practise DNS, storage, permissions, SSH and log investigation.
+| [DNS resolution failure](labs/dns-resolution-failure/) | Simulated troubleshooting lab | `ping`, `getent`, `dig`, `resolvectl` |
+| [File permission problem](labs/file-permission-problem/) | Simulated troubleshooting lab | `id`, `namei`, `ls`, `getfacl` |
+| [Network connectivity](labs/network-connectivity/) | Simulated troubleshooting lab | `ip`, `ping`, `ss`, `nc` |
+| [SSH key authentication](labs/ssh-key-authentication/) | Simulated troubleshooting lab | `ssh`, `systemctl`, `journalctl`, `ss` |
 
 ## Safety notes
 
